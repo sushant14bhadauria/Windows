@@ -4,8 +4,6 @@ from scp import SCPClient
 import time
 import os
 
-f = open('file.txt','a')
-
 def trylogin(hostname,ip,user,passw):
 
     ssh = paramiko.SSHClient()
@@ -14,22 +12,21 @@ def trylogin(hostname,ip,user,passw):
     try:
         ssh.connect(ip,username=user,password=passwd)
         sftp = ssh.open_sftp()
-
-        sftp.put('cfg2html-linux.dat','/cfg2html-linux.dat')
+	
         sftp.put('script.sh','script.sh')
 
-        command = "sh script.sh "+hostname
+        command = "sh script.sh "+argument
         stdin, stdout, stderr = ssh.exec_command(command)
 
         #data = stdout.read()
         #print(data)
 
-        time.sleep(60)
+        time.sleep(secs)
 
-        os.mkdir(hostname)
+        os.mkdir(dir_name) #make a dir where to save the get files
 
-        local_path = hostname
-        remote_path = "/" + hostname+'_cfg2html'
+        local_path = dir_name
+        remote_path = "/dir/"
 
         item_list = sftp.listdir(remote_path)
 
@@ -37,24 +34,16 @@ def trylogin(hostname,ip,user,passw):
         	sftp.get( remote_path + "/" + item,  local_path + "/" + item)
         	stdin, stdout, stderr = ssh.exec_command("rm -f script.sh")
 
-        valueTowrite = ",Successful\n"
         print '[-] Successful....'
-        f.write(str(valueTowrite))
 
         sftp.close()
         ssh.close()
         		
     except paramiko.AuthenticationException:
-    	valueTowrite = ",Authentication Exception\n"
-        print "[-] Authentication Exception! ..."
-        f.write(str(valueTowrite))      
+        print "[-] Authentication Exception! ..."    
          
     except paramiko.SSHException:
-    	valueTowrite = ",SSH Exception\n"
         print "[-] SSH Exception! ..."
-        f.write(str(valueTowrite)) 
-
-
 
 with open('test.csv') as file:
 
@@ -69,7 +58,6 @@ with open('test.csv') as file:
 		passwd = passwd[:-1]
 
 		print("************************ Working on " + hostname + " ****************************************")
-		f.write(str(hostname).rstrip('\n'))
 
 		try:
 			trylogin(hostname,ip,user,passwd)
@@ -77,7 +65,5 @@ with open('test.csv') as file:
 
 		except Exception, e:
 			print '[-] General Exception'
-			valueTowrite = ",General Exception\n"
-			f.write(str(valueTowrite))
 
 f.close()
