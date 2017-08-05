@@ -1,0 +1,83 @@
+import paramiko
+from paramiko import SSHClient
+from scp import SCPClient
+import time
+import os
+
+f = open('file.txt','a')
+
+def trylogin(hostname,ip,user,passw):
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    try:
+        ssh.connect(ip,username=user,password=passwd)
+        sftp = ssh.open_sftp()
+
+        sftp.put('cfg2html-linux.dat','/cfg2html-linux.dat')
+        sftp.put('script.sh','script.sh')
+
+        command = "sh script.sh "+hostname
+        stdin, stdout, stderr = ssh.exec_command(command)
+
+        #data = stdout.read()
+        #print(data)
+
+        time.sleep(60)
+
+        os.mkdir(hostname)
+
+        local_path = hostname
+        remote_path = "/" + hostname+'_cfg2html'
+
+        item_list = sftp.listdir(remote_path)
+
+        for item in item_list:
+        	sftp.get( remote_path + "/" + item,  local_path + "/" + item)
+        	stdin, stdout, stderr = ssh.exec_command("rm -f script.sh")
+
+        valueTowrite = ",Successful\n"
+        print '[-] Successful....'
+        f.write(str(valueTowrite))
+
+        sftp.close()
+        ssh.close()
+        		
+    except paramiko.AuthenticationException:
+    	valueTowrite = ",Authentication Exception\n"
+        print "[-] Authentication Exception! ..."
+        f.write(str(valueTowrite))      
+         
+    except paramiko.SSHException:
+    	valueTowrite = ",SSH Exception\n"
+        print "[-] SSH Exception! ..."
+        f.write(str(valueTowrite)) 
+
+
+
+with open('test.csv') as file:
+
+	for line in file:
+
+		row = line.split(",")
+
+		hostname = row[0]
+		ip = row[1]
+		user = row[2]
+		passwd = row[3]
+		passwd = passwd[:-1]
+
+		print("************************ Working on " + hostname + " ****************************************")
+		f.write(str(hostname).rstrip('\n'))
+
+		try:
+			trylogin(hostname,ip,user,passwd)
+
+
+		except Exception, e:
+			print '[-] General Exception'
+			valueTowrite = ",General Exception\n"
+			f.write(str(valueTowrite))
+
+f.close()
